@@ -1080,23 +1080,51 @@ end
 
 function aura_env.checkKey()
     aura_env.tyrannical = false
+    -- start the dungeon modifier at 1
     aura_env.modifier = 1
     
-    local keyLevel, keyAffix = C_ChallengeMode.GetActiveKeystoneInfo()
+    -- grab keystone info 
+    local keyLevel, keyAffixes = C_ChallengeMode.GetActiveKeystoneInfo()
+    
     if keyLevel then
+        -- tyrannical or fortified is first affix
+        local biweeklyAffix = keyAffixes[1]
+        -- source: https://www.wowhead.com/guide/mythic-keystones-and-dungeons
+        -- 20 -> 380% damage and health increase
         local keyMod = C_ChallengeMode.GetPowerLevelDamageHealthMod(keyLevel)
+        -- convert the percentage damage increase to a flat multiplicative value
         aura_env.modifier = aura_env.modifier * (1 + keyMod / 100)
-        for _,affix in pairs(keyAffix) do
-            if affix == 9 then
-                aura_env.tyrannical = true
-            end
+        -- tyrannical id is 9, fortified is id 10
+        if biweeklyAffix == 9 then
+            aura_env.tyrannical = true
         end
     end
 end
 
 function aura_env.checkTalents()
-    --- Death Knight ---
-    if aura_env.classID == 6 then
+    
+    -- source: https://wowpedia.fandom.com/wiki/ClassId
+    -- warrior
+    if aura_env.classID == 1 then
+        aura_env.seasonedSoldier = IsPlayerSpell(279423)
+        
+    -- paladin
+    elseif aura_env.classID == 2 then
+        
+        
+    -- hunter
+    elseif aura_env.classID == 3 then
+        aura_env.huntersAvoidance = IsPlayerSpell(384799)
+        
+    -- rogue
+    elseif aura_env.classID == 4 then
+        aura_env.elusiveness = IsPlayerSpell(79008)
+        
+    -- priest
+    elseif aura_env.classID == 5 then
+        aura_env.elusiveness = IsPlayerSpell(79008) 
+    -- death knight
+    elseif aura_env.classID == 6 then
         aura_env.necropolis = IsPlayerSpell(206967)
         aura_env.necropolisReduction = 1
         if aura_env.necropolis then
@@ -1108,17 +1136,38 @@ function aura_env.checkTalents()
             end
         end
         aura_env.suppression = IsPlayerSpell(374049)
-        --- Hunter ---
-    elseif aura_env.classID == 3 then
-        aura_env.huntersAvoidance = IsPlayerSpell(384799)
-        --- Rogue ---
-    elseif aura_env.classID == 4 then
-        aura_env.elusiveness = IsPlayerSpell(79008)
-        --- Warlock ---
+    -- hunter
+    elseif aura_env.classID == 7 then
+        
+    -- mage 
+    elseif aura_env.classID == 8 then
+        
+    -- warlock
     elseif aura_env.classID == 9 then
         aura_env.profaneBargain = IsPlayerSpell(389576)
-    elseif aura_env.classID == 1 then
-        aura_env.seasonedSoldier = IsPlayerSpell(279423)
+    -- monk
+    elseif aura_env.classID == 10 then
+        
+    -- druid
+    elseif aura_env.classID == 11 then
+        
+    -- demon hunter
+    elseif aura_env.classID == 12 then
+        
+    -- evoker 
+    elseif aura_env.classID == 13 then
+        aura_env.inherentResistance = IsPlayerSpell(375544)
+        if aura_env.inherentResistance then
+            aura_env.inherentResistanceReduction = 1
+            local rank = aura_env.findTalentRank(375544)
+            if rank == 1 then
+                aura_env.inherentResistanceReduction = aura_env.inherentResistanceReduction * 0.98
+            elseif rank == 2 then 
+                aura_env.inherentResistanceReduction = aura_env.inherentResistanceReduction * 0.96
+            end
+            print(aura_env.inherentResistanceReduction)
+        end
+        
     end
     
     --- Racial ---
@@ -1143,7 +1192,6 @@ function aura_env.checkTalents()
     end
 end
 
-
 function aura_env.checkModifier(unit, spellDamage, spellId)
     local damage = spellDamage or 0
     local multiplier = aura_env.modifier
@@ -1159,34 +1207,66 @@ function aura_env.checkModifier(unit, spellDamage, spellId)
             -- elseif spellId == 0 and WA_GetUnitDebuff(unit, 0) then -- Sadana // Dark Communion
         end
     end
-    
-    if spellId == 377004 and WA_GetUnitDebuff("player", 397210) then -- Crawth // Sonic Vulnerability
+    print("spell name is ", GetSpellInfo(spellId))
+    -- for crawth (s1)
+    if spellId == 377004 and WA_GetUnitDebuff("player", 397210) then 
         local stacks = select(3, WA_GetUnitDebuff("player", 397210))
         multiplier = multiplier * (1 + 0.5 * (stacks or 1))
-    -- if lava spray and magmatusk has magma tentacle stacks
+        
+        -- s2 dungeons
+        -- if lava spray and magmatusk has magma tentacle stacks
     elseif spellId == 375251 and WA_GetUnitBuff("target", 374410) then
-        -- check for the stacks and apply the multiplier to the damage
         local stacks = select(3, WA_GetUnitBuff("target", 374410))
         multiplier = multiplier * stacks
+        
+        -- if withered eruption and wratheye has decaying strength stacks
+    elseif spellId == 373960 and WA_GetUnitBuff("target", 374186) then
+        local stacks = select(3, WA_GetUnitBuff("target", 374186))
+        multiplier = multiplier * (1 + 0.05 * (stacks or 1))
+        
+        -- if power surge and irideus has stacks
+    elseif spellId == 384014 and WA_GetUnitBuff("target", 389486) then
+        local stacks = select(3, WA_GetUnitBuff("target", 389486))
+        multiplier = multiplier * (1 + 0.02 * (stacks or 1))
+        
+        -- if overpowering croak and frog has hangry enrage buff
+    elseif spellId == 385181 and WA_GetUnitBuff("target", 385743) then
+        local stacks = select(3, WA_GetUnitBuff("target", 385743))
+        multiplier = multiplier * (1 + 0.5 * (stacks or 1))
+        
+        -- if tempest's fury and tsunami has inundate buff
+    elseif spellId == 388424 and WA_GetUnitBuff("target", 387619) then 
+        local stacks = select(3, WA_GetUnitBuff("target", 387619))
+        multiplier = multiplier * (1 + 0.01 * (stacks or 1))
+        return damage * multiplier
     end
-    return damage * multiplier
 end
 
 function aura_env.findTalentRank(spellID)
+    -- we use this to search for a given spell based on its ID
+
     local configId = C_ClassTalents.GetActiveConfigID()
     local configInfo = C_Traits.GetConfigInfo(configId)
     
-    for _,treeId in pairs(configInfo.treeIDs) do
-        local treeNodes = C_Traits.GetTreeNodes(treeId)
-        for _,nodeId in pairs(treeNodes) do
-            local nodeInfo = C_Traits.GetNodeInfo(configId, nodeId)
-            for _, entryId in pairs(nodeInfo.entryIDs) do
-                local entryInfo = C_Traits.GetEntryInfo(configId, entryId)
-                local defId = entryInfo.definitionID
-                local defInfo = C_Traits.GetDefinitionInfo(defId)
-                if defInfo.spellID == spellID then
-                    return nodeInfo.currentRank
-                end
+    -- treeIDs is always size 1
+    local treeID = configInfo.treeIDs[1]
+    -- grabs all nodes (both class and spec trees)
+    local treeNodes = C_Traits.GetTreeNodes(treeID)
+    -- for every node 
+    for _,nodeId in pairs(treeNodes) do
+        -- each node consists of at least one entry (one entry per talent)
+        -- nodes will contain two entries if it is a choice talent
+        local nodeInfo = C_Traits.GetNodeInfo(configId, nodeId)
+        for _, entryId in pairs(nodeInfo.entryIDs) do
+            -- each entry has definitions
+            local entryInfo = C_Traits.GetEntryInfo(configId, entryId)
+            -- each definition is indexed by its ID
+            local defId = entryInfo.definitionID
+            -- each definition ID we can use to check its spell ID
+            local defInfo = C_Traits.GetDefinitionInfo(defId)
+    
+            if defInfo.spellID == spellID then
+                return nodeInfo.currentRank
             end
         end
     end
