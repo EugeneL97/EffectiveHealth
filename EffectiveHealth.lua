@@ -1110,8 +1110,16 @@ function aura_env.checkTalents()
         
     -- paladin
     elseif aura_env.classID == 2 then
-        
-        
+        aura_env.sanctifiedPlates = IsPlayerSpell(402964)
+        if aura_env.sanctifiedPlates then
+            local rank = aura_env.findTalentRank(402964)
+            if rank == 1 then
+                aura_env.sancitifedPlatesReduction = aura_env.sancitifedPlatesReduction * 0.95
+            elseif rank == 2 then
+                aura_env.sancitifedPlatesReduction = aura_env.sancitifedPlatesReduction * 0.90
+            end
+        end
+        aura_env.obdurancy = IsPlayerSpell(385427)
     -- hunter
     elseif aura_env.classID == 3 then
         aura_env.huntersAvoidance = IsPlayerSpell(384799)
@@ -1122,7 +1130,7 @@ function aura_env.checkTalents()
         
     -- priest
     elseif aura_env.classID == 5 then
-        aura_env.elusiveness = IsPlayerSpell(79008) 
+        
     -- death knight
     elseif aura_env.classID == 6 then
         aura_env.necropolis = IsPlayerSpell(206967)
@@ -1165,28 +1173,40 @@ function aura_env.checkTalents()
             elseif rank == 2 then 
                 aura_env.inherentResistanceReduction = aura_env.inherentResistanceReduction * 0.96
             end
-            print(aura_env.inherentResistanceReduction)
         end
-        
     end
     
-    --- Racial ---
-    if IsPlayerSpell(20551) or IsPlayerSpell(20583) then -- tauran / night elf
+    -- adding each racial trait damage reduction 
+
+    -- tauren or night elf
+    if IsPlayerSpell(20551) or IsPlayerSpell(20583) then 
         aura_env.reductionNature = aura_env.reductionNature * 0.99
-    elseif IsPlayerSpell(20579) or IsPlayerSpell(59221) or IsPlayerSpell(255668) then -- undead / draenei / void elf
+    -- undead, draenei, void elf
+    elseif IsPlayerSpell(20579) or IsPlayerSpell(59221) or IsPlayerSpell(255668) then 
         aura_env.reductionShadow = aura_env.reductionShadow * 0.99
-    elseif IsPlayerSpell(255664) or IsPlayerSpell(20592) or IsPlayerSpell(822) then -- nightborne / gnome / blood elf
+
+    -- nightborne / gnome / blood elf
+    elseif IsPlayerSpell(255664) or IsPlayerSpell(20592) or IsPlayerSpell(822) then
         aura_env.reductionArcane = aura_env.reductionArcane * 0.99
-    elseif IsPlayerSpell(312198) then -- vulpera
+
+    -- vulpera 
+    elseif IsPlayerSpell(312198) then 
         aura_env.eductionFire = aura_env.reductionFire * 0.99
-    elseif IsPlayerSpell (291417) then -- kul tiran
+
+    -- kultiran yuman
+    elseif IsPlayerSpell (291417) then 
         aura_env.reductionFrost = aura_env.reductionFrost * 0.99
         aura_env.reductionNature = aura_env.reductionNature * 0.99
-    elseif IsPlayerSpell(20596) then -- dwarf
+    -- dwarf 
+    elseif IsPlayerSpell(20596) then 
         aura_env.reductionFrost = aura_env.reductionFrost * 0.99
-    elseif IsPlayerSpell(255651) then -- lightforged draenei
+    
+    -- lightforged draenei
+    elseif IsPlayerSpell(255651) then 
         aura_env.reductionHoly = aura_env.reductionHoly * 0.99
-    elseif IsPlayerSpell(68976) then -- worgen
+
+    -- worgen
+    elseif IsPlayerSpell(68976) then 
         aura_env.reductionShadow = aura_env.reductionShadow * 0.99
         aura_env.reductionNature = aura_env.reductionNature * 0.99
     end
@@ -1279,7 +1299,7 @@ function aura_env.updateDamage(ability, spellDamage, school, aoe, ignoreArmor, t
         local removeAvoidance = 1
         if not aoe then
             removeAvoidance = removeAvoidance / aura_env.avoidance
-            if aura_env.feintBuff and aura_env.elusiveness then -- Elusiveness
+            if aura_env.feintBuff and aura_env.elusiveness then 
                 removeAvoidance = removeAvoidance * 0.60
             elseif aura_env.huntersAvoidance then
                 removeAvoidance = removeAvoidance * 0.94
@@ -1308,13 +1328,15 @@ function aura_env.updateDamage(ability, spellDamage, school, aoe, ignoreArmor, t
         
         local remainingPhysical, remainingMagic
         local result
+
+        -- if spell is physical
         if school == 1 then
             local reductionPhysical = aura_env.reductionPhysical * aura_env.avoidance * removeAvoidance
             local absorbPhysical = aura_env.absorbPhysical
             if ignoreArmor then
                 reductionPhysical = reductionPhysical / aura_env.armor
             end
-            local EHP = aura_env.currentHealth / reductionPhysical
+            local effectiveHealthPhysical = aura_env.currentHealth / reductionPhysical
             
             if aura_env.classID == 10 then -- Monk
                 if aura_env.dampenHarmBuff then -- Dampen Harm
@@ -1332,10 +1354,10 @@ function aura_env.updateDamage(ability, spellDamage, school, aoe, ignoreArmor, t
                     local maxEH = aura_env.maxHealth / reductionPhysical
                     local damage = spellDamage - abs
                     local absorbed = spellDamage - damage
-                    if (EHP - damage) / maxEH * 100 < 30 then
-                        local dmgPercent = 30 - ((EHP - damage) / maxEH * 100)
+                    if (effectiveHealthPhysical - damage) / maxEH * 100 < 30 then
+                        local dmgPercent = 30 - ((effectiveHealthPhysical - damage) / maxEH * 100)
                         local expectedReduction = damage - (damage - (dmgPercent / 100) * maxEH * aura_env.necropolisReduction)
-                        local notReduced = EHP / maxEH * 100 - 30
+                        local notReduced = effectiveHealthPhysical / maxEH * 100 - 30
                         spellDamage = notReduced * maxEH / 100 + expectedReduction + absorbed
                     end
                 end
@@ -1346,10 +1368,10 @@ function aura_env.updateDamage(ability, spellDamage, school, aoe, ignoreArmor, t
                     local maxEH = aura_env.maxHealth / reductionPhysical
                     local damage = spellDamage - abs
                     local absorbed = spellDamage - damage
-                    if (EHP - damage) / maxEH * 100 < 35 then
-                        local dmgPercent = 35 - ((EHP - damage) / maxEH * 100)
+                    if (effectiveHealthPhysical - damage) / maxEH * 100 < 35 then
+                        local dmgPercent = 35 - ((effectiveHealthPhysical - damage) / maxEH * 100)
                         local expectedReduction = damage - (damage - (dmgPercent / 100) * maxEH * aura_env.profaneBargainReductionReduction)
-                        local notReduced = EHP / maxEH * 100 - 35
+                        local notReduced = effectiveHealthPhysical / maxEH * 100 - 35
                         aura_env.damage = notReduced * maxEH / 100 + expectedReduction + absorbed
                     end
                 end
@@ -1367,11 +1389,12 @@ function aura_env.updateDamage(ability, spellDamage, school, aoe, ignoreArmor, t
             end
             
             result = "|c"..aura_env.colorPhysical..ability.."|r"..remainingPhysical.."\n"
-            
+
+        -- if the spell is not physical (aka magic - arcane, fire, frost, etc)
         else
             local reductionMagic = aura_env.reductionMagic * aura_env.avoidance * removeAvoidance
             local absorbMagic = aura_env.absorbMagic
-            local EHM = aura_env.currentHealth / reductionMagic
+            local effectiveHealthMagic = aura_env.currentHealth / reductionMagic
             
             if aura_env.classID == 10 then -- Monk
                 if aura_env.dampenHarmBuff then -- Dampen Harm
@@ -1387,10 +1410,10 @@ function aura_env.updateDamage(ability, spellDamage, school, aoe, ignoreArmor, t
                 local maxEH = aura_env.maxHealth / reductionMagic
                 local damage = spellDamage - abs
                 local absorbed = spellDamage - damage
-                if (EHM - damage) / maxEH * 100 < 30 then
-                    local dmgPercent = 30 - ((EHM - damage) / maxEH * 100)
+                if (effectiveHealthMagic - damage) / maxEH * 100 < 30 then
+                    local dmgPercent = 30 - ((effectiveHealthMagic - damage) / maxEH * 100)
                     local expectedReduction = damage - (damage - (dmgPercent / 100) * maxEH * aura_env.necropolisReduction)
-                    local notReduced = EHM / maxEH * 100 - 30
+                    local notReduced = effectiveHealthMagic / maxEH * 100 - 30
                     spellDamage = notReduced * maxEH / 100 + expectedReduction + absorbed
                 end
                 
@@ -1399,10 +1422,10 @@ function aura_env.updateDamage(ability, spellDamage, school, aoe, ignoreArmor, t
                 local maxEH = aura_env.maxHealth / reductionMagic
                 local damage = spellDamage - abs
                 local absorbed = spellDamage - damage
-                if (EHM - damage) / maxEH * 100 < 35 then
-                    local dmgPercent = 35 - ((EHM - damage) / maxEH * 100)
+                if (effectiveHealthMagic - damage) / maxEH * 100 < 35 then
+                    local dmgPercent = 35 - ((effectiveHealthMagic - damage) / maxEH * 100)
                     local expectedReduction = damage - (damage - (dmgPercent / 100) * maxEH * aura_env.profaneBargainReductionReduction)
-                    local notReduced = EHM / maxEH * 100 - 35
+                    local notReduced = effectiveHealthMagic / maxEH * 100 - 35
                     aura_env.damage = notReduced * maxEH / 100 + expectedReduction + absorbed
                 end
             end
