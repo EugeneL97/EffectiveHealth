@@ -1207,7 +1207,7 @@ function aura_env.checkModifier(unit, spellDamage, spellId)
             -- elseif spellId == 0 and WA_GetUnitDebuff(unit, 0) then -- Sadana // Dark Communion
         end
     end
-    print("spell name is ", GetSpellInfo(spellId))
+    
     -- for crawth (s1)
     if spellId == 377004 and WA_GetUnitDebuff("player", 397210) then 
         local stacks = select(3, WA_GetUnitDebuff("player", 397210))
@@ -1238,8 +1238,8 @@ function aura_env.checkModifier(unit, spellDamage, spellId)
     elseif spellId == 388424 and WA_GetUnitBuff("target", 387619) then 
         local stacks = select(3, WA_GetUnitBuff("target", 387619))
         multiplier = multiplier * (1 + 0.01 * (stacks or 1))
-        return damage * multiplier
     end
+    return damage * multiplier
 end
 
 function aura_env.findTalentRank(spellID)
