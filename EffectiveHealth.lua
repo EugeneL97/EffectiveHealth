@@ -378,7 +378,7 @@ function aura_env.checkBuffs()
                 end
                 
                 --- Rogue ---
-            elseif spellID == 1966 then
+            elseif spellID == 1966 then -- Feint
                 if not aura_env.aoe and aura_env.elusiveness then
                     reduction = 0.80 -- Elusiveness
                     aura_env.feint = 0.60
@@ -388,12 +388,12 @@ function aura_env.checkBuffs()
                 end
             elseif spellID == 31224 then -- Cloak of Shadows
                 aura_env.immunityMagic = true
-            elseif spellID == 5277 then -- evasion
+            elseif spellID == 5277 then -- Evasion
                 if aura_env.conditionalReductions then
                     aura_env.immunityPhysical = true
                 end
                 if aura_env.elusiveness then
-                    reduction = 0.90
+                    reduction = 0.80
                 end
                 
                 --- Shaman ---
@@ -507,7 +507,7 @@ function aura_env.checkTalents()
         aura_env.elusiveness = IsPlayerSpell(79008)
         aura_env.rogueCheatDeath = IsPlayerSpell(31230)
         if IsPlayerSpell(231719) then -- Deadened Nerves
-            reductionPhysical = reductionPhysical * 0.97
+            reductionPhysical = reductionPhysical * 0.95
         end
         
         --- Priest ---
@@ -900,7 +900,6 @@ function aura_env.findTalentRank(spellID)
                 end
             end
         end
-        
     end
 end
 
@@ -1461,7 +1460,6 @@ function aura_env.updateDamage(ability, spellDamage, school, aoe, ignoreArmor, t
         
         return result
     end
-end
 
 function aura_env.checkUnit(unitGUID)
     for i=1,40 do
